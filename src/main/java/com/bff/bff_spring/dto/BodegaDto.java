@@ -7,5 +7,5 @@ public class BodegaDto {
   private Long id;
   private String nombre;
   private String direccion;
-  private String activo; // "S"|"N"
+  private String activo; 
 }

@@ -2,38 +2,50 @@ package com.bff.bff_spring.service;
 
 import com.bff.bff_spring.dto.StockDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @Service
 public class StockClient {
 
-  private final RestTemplate rest;
-  public StockClient(RestTemplate rest) { this.rest = rest; }
+  private final GraphQLClient gql;
+  public StockClient(GraphQLClient gql) { this.gql = gql; }
 
-  @Value("${ms.stock.base-url}") private String stockBase;
+  @Value("${graphql.stock.url}") private String endpoint;
 
   public ResponseEntity<String> asignar(StockDto dto) {
-    String url = stockBase + "/api/stock/asignar";
-    HttpHeaders h = new HttpHeaders(); h.setContentType(MediaType.APPLICATION_JSON);
-    return rest.exchange(url, HttpMethod.POST, new HttpEntity<>(dto, h), String.class);
+    String q = "mutation AssignStock($in:StockInput!){ assignStock(input:$in){ id productoId bodegaId stock } }";
+    Map<String,Object> vars = Map.of("in", Map.of(
+        "productoId", dto.getProductoId(),
+        "bodegaId", dto.getBodegaId(),
+        "stock", dto.getStock()
+    ));
+    return gql.execute(endpoint, q, vars, "AssignStock");
   }
 
   public ResponseEntity<String> byProductoBodega(Long productoId, Long bodegaId) {
-    return rest.getForEntity(
-        stockBase + "/api/stock/producto/" + productoId + "/bodega/" + bodegaId, String.class);
+    String q = "query StockByProductoBodega($p:ID!,$b:ID!){ stockByProductoBodega(productoId:$p,bodegaId:$b){ id productoId bodegaId stock } }";
+    return gql.execute(endpoint, q, Map.of("p", productoId, "b", bodegaId), "StockByProductoBodega");
   }
 
   public ResponseEntity<String> listByBodega(Long bodegaId) {
-    return rest.getForEntity(stockBase + "/api/stock/bodega/" + bodegaId, String.class);
+    String q = "query StockByBodega($b:ID!){ stockByBodega(bodegaId:$b){ id stock producto { id nombre sku } } }";
+    return gql.execute(endpoint, q, Map.of("b", bodegaId), "StockByBodega");
   }
 
   public ResponseEntity<String> listByProducto(Long productoId) {
-    return rest.getForEntity(stockBase + "/api/stock/producto/" + productoId, String.class);
+    String q = "query StockByProducto($p:ID!){ stockByProducto(productoId:$p){ id stock bodega { id nombre direccion } } }";
+    return gql.execute(endpoint, q, Map.of("p", productoId), "StockByProducto");
   }
 
   public ResponseEntity<String> delete(Long id) {
-    return rest.exchange(stockBase + "/api/stock/" + id, HttpMethod.DELETE, null, String.class);
+    return ResponseEntity.status(405).body("{\"error\":\"No soportado en GraphQL\"}");
   }
+
+  public ResponseEntity<String> ejecutarLibre(String query, Map<String,Object> vars, String opName) {
+    return gql.execute(endpoint, query, vars, opName);
+  }
+
 }

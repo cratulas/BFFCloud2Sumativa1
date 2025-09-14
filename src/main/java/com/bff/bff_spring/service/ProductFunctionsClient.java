@@ -36,7 +36,7 @@ public class ProductFunctionsClient {
       HttpEntity<String> entity = new HttpEntity<>(json, h);
       return rest.exchange(createUrl, HttpMethod.POST, entity, String.class);
     } catch (HttpStatusCodeException e) {
-      // Propaga mismo status y body que retornó la Function
+      
       return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
     } catch (Exception e) {
       return ResponseEntity.internalServerError().body("{\"error\":\"" + e.getMessage() + "\"}");

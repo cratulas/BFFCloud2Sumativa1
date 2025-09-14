@@ -10,5 +10,5 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
-# Perfil docker; puedes añadir JAVA_OPTS si quieres memory flags
+# Perfil docker;
 ENTRYPOINT ["sh","-c","java -Dspring.profiles.active=docker $JAVA_OPTS -jar app.jar"]
